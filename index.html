@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上海商銀數位金融部 - 內部整合入口網</title>
+    <style>
+        :root {
+            --primary-color: #0056b3; /* 企業主色調（藍） */
+            --secondary-color: #f39c12; /* 企業輔助色（橘） */
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Microsoft JhengHei';
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 { margin: 0; font-size: 1.8rem; }
+        p.subtitle { margin: 5px 0 0; font-size: 0.9rem; opacity: 0.8; }
+        
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .section-title {
+            border-left: 4px solid var(--secondary-color);
+            padding-left: 10px;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border-bottom: 3px solid var(--secondary-color);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+        .card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem;
+            color: #777;
+            font-size: 0.8rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>上海商業儲蓄銀行</h1>
+        <p class="subtitle">數位金融部 - 內部作業整合入口網</p>
+    </header>
+
+    <div class="container">
+        
+        <h2 class="section-title">客戶端數位服務 (External Services)</h2>
+        <div class="grid">
+            <a href="https://www.scsb.com.tw/" target="_blank" class="card">
+                <h3>SCSB 官方網站</h3>
+                <p>前往上海商銀官方企業網站首頁。</p>
+            </a>
+            <a href="https://ibank.scsb.com.tw/" target="_blank" class="card">
+                <h3>個人網路銀行</h3>
+                <p>連結至個人網銀登入頁面，供測試或查閱使用。</p>
+            </a>
+            <a href="https://www.scsb.com.tw/content/info/in_a02_02.jsp" target="_blank" class="card">
+                <h3>數位帳戶 (Cloud Bank)</h3>
+                <p>前往數位存款帳戶專區與相關活動頁面。</p>
+            </a>
+            <a href="https://www.scsb.com.tw/content/card/card01.jsp" target="_blank" class="card">
+                <h3>信用卡數位申辦</h3>
+                <p>線上辦卡與信用卡相關數位服務入口。</p>
+            </a>
+        </div>
+
+        <h2 class="section-title">內部優化系統 (Internal Tools)</h2>
+        <div class="grid">
+            <a href="#qa-devices" class="card">
+                <h3>📱 測試設備管理系統</h3>
+                <p>登記、借用與歸還 iOS/Android 測試機。</p>
+            </a>
+            <a href="#bug-tracker" class="card">
+                <h3>🐛 UAT 錯誤回報追蹤</h3>
+                <p>統一格式回報測試 Bug，追蹤 IT 修復進度。</p>
+            </a>
+            <a href="#marketing-scheduler" class="card">
+                <h3>📅 APP 首頁版位排程</h3>
+                <p>預約與查看網銀 APP 廣告 Banner 與推播檔期。</p>
+            </a>
+            <a href="#escalation-ticket" class="card">
+                <h3>🎫 客服進線異常工單</h3>
+                <p>追蹤客戶申辦異常、連線錯誤等後線處理進度。</p>
+            </a>
+        </div>
+
+    </div>
+
+    <footer>
+        &copy; 2026 數位金融部內部專案開發測試使用. 此為概念展示原型 (Prototype).
+    </footer>
+
+</body>
+</html>
