@@ -9,7 +9,7 @@ from deep_translator import GoogleTranslator
 app = FastAPI()
 
 class DCAInput(BaseModel):
-    tickers: str # comma separated
+    tickers: int # comma separated
     amount: float
     start_date: str
     end_date: str
