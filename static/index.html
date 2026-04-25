@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定期定額投資分析</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="container">
+        <header>
+            <h1>定期定額投資概況</h1>
+            <p>輕鬆視覺化您的長期投資成長與績效指標</p>
+        </header>
+
+        <main class="dashboard">
+            <!-- LEFT: Input Form Card -->
+            <section class="card form-card">
+                <h2>投資設定</h2>
+                <form id="dca-form">
+                    <div class="form-group">
+                        <label for="ticker">標的代號 (可用逗號分隔，例: 2330.TW, SPY)</label>
+                        <input type="text" id="ticker" name="ticker" required placeholder="輸入股號">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount">每月定期定額金額 (每個標的)</label>
+                        <input type="number" id="amount" name="amount" min="1" step="1" required placeholder="例如: 10000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="start_date">起始時間</label>
+                        <input type="date" id="start_date" name="start_date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="end_date">終止時間</label>
+                        <input type="date" id="end_date" name="end_date" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="submit-btn">
+                        <span>開始計算</span>
+                    </button>
+                    <div id="error-message" class="error-text"></div>
+                </form>
+            </section>
+
+            <!-- CENTER: KPI + Chart -->
+            <section class="results-section">
+                <!-- KPI Dashboard (Overall Portfolio) -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-title">整體投入本金</div>
+                        <div class="kpi-value" id="kpi-invested">---</div>
+                    </div>
+                    <div class="kpi-card highlight">
+                        <div class="kpi-title">最後終值</div>
+                        <div class="kpi-value" id="kpi-final">---</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-title">年化報酬率 (CAGR)</div>
+                        <div class="kpi-value" id="kpi-cagr">---</div>
+                    </div>
+                    <div class="kpi-card danger">
+                        <div class="kpi-title">最大回撤 (Max Drawdown)</div>
+                        <div class="kpi-value" id="kpi-drawdown">---</div>
+                    </div>
+                </div>
+
+                <!-- Interactive Chart -->
+                <div class="card chart-card">
+                    <h2>資產成長曲線</h2>
+                    <div class="chart-container">
+                        <canvas id="growth-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT: Company Info Sidebar -->
+            <aside class="info-sidebar">
+                <h2 class="sidebar-title">標的簡介</h2>
+                <div id="company-info-container">
+                    <div class="info-placeholder">
+                        <div class="placeholder-icon">🔍</div>
+                        <p>輸入標的代號後，<br>此處將顯示詳細介紹</p>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
