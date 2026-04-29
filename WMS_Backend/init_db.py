@@ -3,6 +3,11 @@ import sqlite3
 def initialize_database():
     # 連接到當前資料夾的 WMS.db
     conn = sqlite3.connect('WMS.db')
+    
+    # 強制啟用 SQLite 的 Foreign Key (外鍵) 檢查
+    # 確保 User/Item 被硬刪除時，若有 Records 關聯會正確阻擋
+    conn.execute("PRAGMA foreign_keys = ON;")
+    
     cursor = conn.cursor()
 
     # 執行 SQL 腳本以建立所有的表與 View
@@ -41,6 +46,7 @@ def initialize_database():
         actual_return_time DATETIME,
         manager_id TEXT,
         reject_reason TEXT,
+        overdue_notice_sent INTEGER DEFAULT 0,
         snap_user_name TEXT,
         snap_user_dept TEXT,
         snap_item_name TEXT,
@@ -104,13 +110,19 @@ def initialize_database():
         
         CASE 
             -- 1. 優先判斷「已歸還(部分毀損)」的時間表現
-            WHEN r.actual_return_time IS NOT NULL AND r.status = '已歸還(部分毀損)' AND r.actual_return_time < r.expected_return_time THEN '提前歸還 (部分毀損)'
-            WHEN r.actual_return_time IS NOT NULL AND r.status = '已歸還(部分毀損)' AND r.actual_return_time = r.expected_return_time THEN '準時歸還 (部分毀損)'
-            WHEN r.actual_return_time IS NOT NULL AND r.status = '已歸還(部分毀損)' AND r.actual_return_time > r.expected_return_time THEN '逾期歸還 (部分毀損)'
+            WHEN r.actual_return_time IS NOT NULL AND r.status = '已歸還(部分毀損)' 
+                 AND ABS(strftime('%s', r.actual_return_time) - strftime('%s', r.expected_return_time)) <= 1800 
+                 THEN '準時歸還 (部分毀損)'
+            WHEN r.actual_return_time IS NOT NULL AND r.status = '已歸還(部分毀損)' 
+                 AND r.actual_return_time < r.expected_return_time THEN '提前歸還 (部分毀損)'
+            WHEN r.actual_return_time IS NOT NULL AND r.status = '已歸還(部分毀損)' 
+                 AND r.actual_return_time > r.expected_return_time THEN '逾期歸還 (部分毀損)'
             
             -- 2. 判斷「已歸還」(正常完好) 的時間表現
+            WHEN r.actual_return_time IS NOT NULL 
+                 AND ABS(strftime('%s', r.actual_return_time) - strftime('%s', r.expected_return_time)) <= 1800 
+                 THEN '準時歸還'
             WHEN r.actual_return_time IS NOT NULL AND r.actual_return_time < r.expected_return_time THEN '提前歸還'
-            WHEN r.actual_return_time IS NOT NULL AND r.actual_return_time = r.expected_return_time THEN '準時歸還'
             WHEN r.actual_return_time IS NOT NULL AND r.actual_return_time > r.expected_return_time THEN '逾期歸還'
 
             -- 3. 借用中的逾期告警與正常狀態
