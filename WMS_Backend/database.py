@@ -3,8 +3,8 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # 1. 定義資料庫的位置與名稱
-# sqlite:/// 代表使用 SQLite，./wms.db 代表在當前資料夾下的 wms.db 檔案
-SQLALCHEMY_DATABASE_URL = "sqlite:///./wms.db"
+# sqlite:/// 代表使用 SQLite，./WMS.db 代表在當前資料夾下的 WMS.db 檔案
+SQLALCHEMY_DATABASE_URL = "sqlite:///./WMS.db"
 
 # 2. 建立資料庫引擎 (Engine)
 # connect_args={"check_same_thread": False} 是 SQLite 在 FastAPI 中特有的設定
