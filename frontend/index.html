@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SBSC WHM 倉儲管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#F8F9FA] text-gray-800 h-screen flex overflow-hidden">
+
+<aside class="w-64 bg-brand-red text-white flex flex-col flex-shrink-0 transition-all duration-300">
+    <div class="p-6 flex flex-col items-center border-b border-white/20">
+        <div class="flex items-center gap-3 mb-4">
+            <span class="text-3xl">🏦</span>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider">SBSC WHM</h1>
+                <p class="text-xs text-white/80">上海商銀倉儲管理</p>
+            </div>
+        </div>
+        <div id="clockDisplay" class="text-lg font-medium tracking-widest mt-2">2026/05/09 08:00</div>
+    </div>
+    
+    <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto scrollbar-hide">
+        <button id="navSearch" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors hover:bg-white/10">
+            <span class="text-xl">📋</span> 財產查詢&申請
+        </button>
+        <button id="navManage" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors hover:bg-white/10">
+            <span class="text-xl">💼</span> 財產管理&異動
+        </button>
+        <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 font-medium transition-colors">
+            <span class="text-xl">📅</span> 預約紀錄
+        </button>
+        <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/10 font-medium transition-colors">
+            <span class="text-xl">🗂️</span> 歷史紀錄
+        </button>
+    </nav>
+    
+    <div class="p-6 border-t border-white/20 flex flex-col items-center">
+        <div class="w-20 h-20 rounded-full bg-[#FCA5A5] flex items-center justify-center text-brand-red text-2xl font-bold border-4 border-white/20 mb-3 shadow-lg overflow-hidden">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Patrick" alt="Dr. Patrick">
+        </div>
+        <div class="text-center">
+            <p class="font-bold text-lg">Dr. Patrick</p>
+        </div>
+    </div>
+</aside>
+
+<main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+    <div id="toastContainer" class="fixed top-6 right-6 z-50 flex flex-col gap-2"></div>
+
+    <!-- 頁面 1: 財產管理&異動 -->
+    <section id="pageManage" class="hidden flex-1 flex flex-col overflow-y-auto">
+        <header class="p-6 flex justify-end items-center gap-4 shrink-0">
+            <button class="flex items-center gap-2 px-5 py-2.5 bg-brand-red text-white rounded-lg hover:bg-[#600000] transition-colors shadow-md text-sm font-medium">
+                <span>🔄</span> 財產更新
+            </button>
+            <button class="flex items-center gap-2 px-5 py-2.5 bg-brand-red text-white rounded-lg hover:bg-[#600000] transition-colors shadow-md text-sm font-medium">
+                <span>➖</span> 財產報廢
+            </button>
+            <button class="flex items-center gap-2 px-5 py-2.5 bg-brand-red text-white rounded-lg hover:bg-[#600000] transition-colors shadow-md text-sm font-medium">
+                <span>➕</span> 新增財產
+            </button>
+        </header>
+
+        <div class="p-6 pt-0 grid grid-cols-1 xl:grid-cols-3 gap-6 flex-1 content-start">
+            <div class="xl:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col h-[400px]">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-brand-red text-xl">🖥️</span>
+                        <h2 class="text-xl font-bold text-brand-red">資產狀況 Assets Status</h2>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-6 border-b pb-4">即時實體資產庫存狀況與使用比例。</p>
+                    <div id="assetsContainerManage" class="flex-1 overflow-y-auto scrollbar-hide space-y-4 px-2"></div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col h-[400px]">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-brand-red text-xl">🖊️</span>
+                        <h2 class="text-xl font-bold text-brand-red">耗材狀況 Consumables Status</h2>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-6 border-b pb-4">監控辦公耗材即時庫存水位。</p>
+                    <div id="consumablesContainerManage" class="flex-1 overflow-y-auto scrollbar-hide space-y-4 px-2"></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col h-[400px] xl:col-span-1">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-brand-red text-xl">🛒</span>
+                    <h2 class="text-xl font-bold text-brand-red">採購資訊 Notice</h2>
+                </div>
+                <div id="noticeTableContainer" class="flex-1 overflow-y-auto scrollbar-hide">
+                    <!-- Table data via JS -->
+                </div>
+            </div>
+            
+            <div class="xl:col-span-3 grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 lg:col-span-3">
+                    <h2 class="text-lg font-bold text-brand-red text-center mb-1">資產項目狀態長條圖</h2>
+                    <div class="chart-container"><canvas id="stackedBarChart"></canvas></div>
+                </div>
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 lg:col-span-1">
+                    <h2 class="text-lg font-bold text-brand-red text-center mb-1">警告水位統計</h2>
+                    <div class="chart-container"><canvas id="donutChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 頁面 2: 財產查詢&申請 -->
+    <section id="pageSearch" class="flex-1 flex overflow-hidden">
+        <div class="flex-1 flex flex-col p-6 overflow-y-auto gap-6">
+            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 min-h-[300px]">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="text-brand-red text-xl">📋</span>
+                    <h2 class="text-xl font-bold text-brand-red">訂單明細 Detail</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-center border-collapse">
+                        <thead>
+                            <tr class="text-brand-red font-bold border-b-2 border-gray-100">
+                                <th class="py-3 px-2">資產/耗材</th>
+                                <th class="py-3 px-2">主管簽核</th>
+                                <th class="py-3 px-2">物品</th>
+                                <th class="py-3 px-2">數量</th>
+                                <th class="py-3 px-2">借用時間</th>
+                                <th class="py-3 px-2">歸還時間</th>
+                                <th class="py-3 px-2">狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailTableBody" class="text-gray-700">
+                            <tr class="border-b border-gray-50">
+                                <td class="py-3">資產</td>
+                                <td class="py-3">需簽核</td>
+                                <td class="py-3 font-medium">筆電</td>
+                                <td class="py-3">2</td>
+                                <td class="py-3">2026/05/09 08:45</td>
+                                <td class="py-3">2026/05/09 17:30</td>
+                                <td class="py-3">借用已簽核</td>
+                            </tr>
+                            <tr class="border-b border-gray-50">
+                                <td class="py-3 text-brand-red font-bold">資產</td>
+                                <td class="py-3 text-red-500 font-bold">歸還需簽核</td>
+                                <td class="py-3 font-medium text-red-500">機械手臂</td>
+                                <td class="py-3 font-bold">1</td>
+                                <td class="py-3">2026/05/09 11:00</td>
+                                <td class="py-3">2026/05/09 15:00</td>
+                                <td class="py-3">已預約</td>
+                            </tr>
+                            <tr class="border-b border-gray-50">
+                                <td class="py-3">資產</td>
+                                <td class="py-3">借用需簽核</td>
+                                <td class="py-3 font-medium">智能會議電視</td>
+                                <td class="py-3">1</td>
+                                <td class="py-3">2026/05/09 13:00</td>
+                                <td class="py-3">2026/05/09 16:30</td>
+                                <td class="py-3">借用已簽核</td>
+                            </tr>
+                            <tr class="border-b border-gray-50">
+                                <td class="py-3 text-brand-red">資產</td>
+                                <td class="py-3">否</td>
+                                <td class="py-3 font-medium">靜音屏風</td>
+                                <td class="py-3 font-bold">2</td>
+                                <td class="py-3">2026/05/09 13:00</td>
+                                <td class="py-3">2026/05/09 16:30</td>
+                                <td class="py-3">已預約</td>
+                            </tr>
+                            <tr class="border-b border-gray-50">
+                                <td class="py-3 text-brand-red">耗材</td>
+                                <td class="py-3">否</td>
+                                <td class="py-3 font-medium">訂書針</td>
+                                <td class="py-3 font-bold">1</td>
+                                <td class="py-3">2026/05/09 11:00</td>
+                                <td class="py-3">N/A</td>
+                                <td class="py-3">已預約</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col h-[400px]">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-brand-red text-xl">🖥️</span>
+                        <h2 class="text-xl font-bold text-brand-red">資產狀況 Assets Status</h2>
+                    </div>
+                    <div id="assetsContainerSearch" class="flex-1 overflow-y-auto scrollbar-hide space-y-4 px-2 mt-4"></div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col h-[400px]">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-brand-red text-xl">🖊️</span>
+                        <h2 class="text-xl font-bold text-brand-red">耗材狀況 Consumables Status</h2>
+                    </div>
+                    <div id="consumablesContainerSearch" class="flex-1 overflow-y-auto scrollbar-hide space-y-4 px-2 mt-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="w-80 bg-white border-l border-gray-100 p-6 overflow-y-auto">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="text-brand-red text-xl">🎯</span>
+                <h2 class="text-xl font-bold text-brand-red">狀態列表 Status List</h2>
+            </div>
+
+            <div class="status-card">
+                <div class="flex justify-center items-center gap-2 status-title text-lg">
+                    <span class="text-2xl font-black">2</span> 案 簽核中
+                </div>
+                <div class="space-y-2 mt-2">
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/09</span><span class="font-bold">筆電</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/09</span><span class="font-bold">智能會議電視</span></div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="flex justify-center items-center gap-2 status-title text-lg">
+                    <span class="text-2xl font-black">4</span> 案 已簽核
+                </div>
+                <div class="space-y-2 mt-2">
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/09</span><span class="font-bold">機械手臂</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/09</span><span class="font-bold">靜音屏風</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/09</span><span class="font-bold">訂書針</span></div>
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/10</span><span class="font-bold">便條紙</span></div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="flex justify-center items-center gap-2 status-title text-lg">
+                    <span class="text-2xl font-black">1</span> 案 借用中
+                </div>
+                <div class="space-y-2 mt-2">
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/09</span><span class="font-bold">推車</span></div>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="flex justify-center items-center gap-2 status-title text-lg">
+                    <span class="text-2xl font-black">1</span> 案 已逾期
+                </div>
+                <div class="space-y-2 mt-2">
+                    <div class="flex justify-between text-sm"><span class="text-gray-400">05/07</span><span class="font-bold">筆電</span></div>
+                </div>
+            </div>
+        </aside>
+    </section>
+</main>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

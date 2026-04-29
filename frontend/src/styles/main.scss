@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+$brand-red: #800000;
+$brand-gradient: linear-gradient(90deg, #ffa500, #ff6b6b);
+
+body {
+  font-family: "Noto Sans TC", sans-serif;
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  height: 300px;
+  max-height: 400px;
+
+  @media (min-width: 1024px) {
+    height: 350px;
+  }
+}
+
+.scrollbar-hide {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.progress-gradient {
+  background: $brand-gradient;
+}
+
+.active-nav {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.status-card {
+  border: 2px solid $brand-red;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.status-title {
+  color: $brand-red;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+}
