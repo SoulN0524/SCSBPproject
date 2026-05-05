@@ -490,21 +490,21 @@ function initManageCharts(): void {
       data: {
         labels: labels,
         datasets: [
-          { label: "閒置中", data: idle, backgroundColor: "#86efac" },
+          { label: "閒置中", data: idle, backgroundColor: "#fce7eaff" },
           {
             label: "已預約/待簽核",
             data: reserved,
-            backgroundColor: "#fde047",
+            backgroundColor: "#ffcae1ff",
           },
           {
             label: "借用中",
             data: borrowed,
-            backgroundColor: "#fb923c",
+            backgroundColor: "rgba(248, 154, 179, 1)",
           },
           {
             label: "已逾期",
             data: overdue,
-            backgroundColor: "#ef4444", // Red color for overdue
+            backgroundColor: "#ff7878ff", // Red color for overdue
           },
         ],
       },

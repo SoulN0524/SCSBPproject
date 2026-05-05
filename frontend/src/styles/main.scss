@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 $brand-red: #800000;
-$brand-gradient: linear-gradient(90deg, #ffa500, #ff6b6b);
+$brand-gradient: linear-gradient(90deg, #b2bdf1, #ffbfc0);
 
 body {
   font-family: "Noto Sans TC", sans-serif;
@@ -21,6 +21,22 @@ body {
   @media (min-width: 1024px) {
     height: 350px;
   }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 .scrollbar-hide {
