@@ -33,6 +33,16 @@ def _verify_admin(db: Session, admin_id: str):
     return admin
 
 # ==========================================
+# API 0: 預測下一筆訂單編號 (Next ID)
+# ==========================================
+@router.get("/next-id")
+def get_next_record_id(db: Session = Depends(database.get_db)):
+    """取得資料庫中 Record ID 的最大值 + 1"""
+    result = db.execute(text("SELECT MAX(record_id) FROM Records")).scalar()
+    next_id = (result or 0) + 1
+    return {"next_id": next_id}
+
+# ==========================================
 # API 1: 使用者發起借用申請 (Create)
 # ==========================================
 @router.post("/", response_model=schemas.RecordResponse)

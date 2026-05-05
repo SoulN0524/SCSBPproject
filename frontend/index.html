@@ -290,8 +290,8 @@
                     <th class="py-3 px-2">主管簽核</th>
                     <th class="py-3 px-2">物品</th>
                     <th class="py-3 px-2">數量</th>
-                    <th class="py-3 px-2">借用時間</th>
-                    <th class="py-3 px-2">歸還時間</th>
+                    <th class="py-3 px-2">預期借用時間</th>
+                    <th class="py-3 px-2">預期歸還時間</th>
                     <th class="py-3 px-2">狀態</th>
                   </tr>
                 </thead>
@@ -350,11 +350,14 @@
             <div
               class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col h-[400px]"
             >
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-brand-red text-xl">🖥️</span>
-                <h2 class="text-xl font-bold text-brand-red">
-                  資產狀況 Assets Status
-                </h2>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-brand-red text-xl">🖥️</span>
+                  <h2 class="text-xl font-bold text-brand-red">
+                    資產狀況 Assets Status
+                  </h2>
+                </div>
+                <button id="btnRequestAsset" onclick="handleGlobalRequest('資產')" class="bg-brand-red text-white text-[10px] px-3 py-1 rounded-lg hover:bg-[#600000] transition-colors shadow-sm font-bold">資產借用</button>
               </div>
               <div
                 id="assetsContainerSearch"
@@ -365,11 +368,14 @@
             <div
               class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 flex flex-col h-[400px]"
             >
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-brand-red text-xl">🖊️</span>
-                <h2 class="text-xl font-bold text-brand-red">
-                  耗材狀況 Consumables Status
-                </h2>
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-brand-red text-xl">🖊️</span>
+                  <h2 class="text-xl font-bold text-brand-red">
+                    耗材狀況 Consumables Status
+                  </h2>
+                </div>
+                <button id="btnRequestConsumable" onclick="handleGlobalRequest('耗材')" class="bg-brand-red text-white text-[10px] px-3 py-1 rounded-lg hover:bg-[#600000] transition-colors shadow-sm font-bold">耗材預約</button>
               </div>
               <div
                 id="consumablesContainerSearch"

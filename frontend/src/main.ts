@@ -9,6 +9,7 @@ const API_BASE = "http://localhost:8000/api";
 const state: any = {
   inventory: [],
   usageRecords: [],
+  personalRecords: [],
   allUsers: [],
   currentUser: null as any,
   notices: [
@@ -69,6 +70,18 @@ async function fetchUsageRecords(): Promise<void> {
   }
 }
 
+async function fetchPersonalRecords(empId: string): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE}/dashboards/my-records/${empId}`);
+    if (!response.ok) throw new Error("Failed to fetch personal records");
+    state.personalRecords = await response.json();
+    renderPersonalDetailTable();
+    updateStatusCards();
+  } catch (error) {
+    console.error("Error fetching personal records:", error);
+  }
+}
+
 async function fetchUsers(): Promise<void> {
   try {
     const response = await fetch(`${API_BASE}/users/?is_active=1`);
@@ -106,6 +119,9 @@ function updateCurrentUser(): void {
   if (state.currentUser) {
     if (avatar) avatar.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${state.currentUser.name}`;
     if (roleLabel) roleLabel.textContent = `${state.currentUser.department} · ${state.currentUser.role}`;
+    
+    // Fetch personal records for the new user
+    fetchPersonalRecords(state.currentUser.emp_id);
   }
 }
 
@@ -169,6 +185,90 @@ function renderOrderQueryTable(): void {
   `,
     )
     .join("");
+}
+
+function renderPersonalDetailTable(): void {
+  const tbody = document.getElementById("detailTableBody");
+  if (!tbody) return;
+
+  if (state.personalRecords.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-gray-400">目前無借用紀錄</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = state.personalRecords.map((r: any) => {
+    let typeClass = r["交易類型"] === "耗材" ? "text-brand-red" : "";
+    let approvalText = r["交易類型"].includes("須審核") ? "需簽核" : "免簽核";
+    if (r["原始狀態"] === "待簽核") approvalText = "待簽核";
+    
+    return `
+      <tr class="border-b border-gray-50 hover:bg-gray-50">
+        <td class="py-3 ${typeClass}">${r["交易類型"].includes("資產") ? "資產" : "耗材"}</td>
+        <td class="py-3">${approvalText}</td>
+        <td class="py-3 font-medium">${r["物品名稱"]}</td>
+        <td class="py-3">${r["數量"]}</td>
+        <td class="py-3">${r["預計租借時間"]}</td>
+        <td class="py-3">${r["預計歸還時間"] || "N/A"}</td>
+        <td class="py-3">
+          <span class="px-2 py-1 rounded-full text-[10px] ${getStatusColor(r["原始狀態"])}">
+            ${r["原始狀態"]}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function getStatusColor(status: string): string {
+  switch (status) {
+    case "待簽核": return "bg-yellow-100 text-yellow-700";
+    case "已簽核": case "已預約": return "bg-blue-100 text-blue-700";
+    case "借用中": return "bg-green-100 text-green-700";
+    case "已逾期": return "bg-red-100 text-red-700";
+    case "已結案": case "已歸還": return "bg-gray-100 text-gray-700";
+    case "已駁回": return "bg-red-100 text-red-700";
+    default: return "bg-gray-50 text-gray-500";
+  }
+}
+
+function updateStatusCards(): void {
+  const container = document.querySelector("#pageSearch aside");
+  if (!container) return;
+
+  const records = state.personalRecords;
+  const signing = records.filter((r: any) => r["原始狀態"] === "待簽核");
+  const approved = records.filter((r: any) => ["已簽核", "已預約"].includes(r["原始狀態"]));
+  const borrowing = records.filter((r: any) => r["原始狀態"] === "借用中");
+  const overdue = records.filter((r: any) => r["原始狀態"] === "已逾期");
+
+  const renderCard = (title: string, count: number, items: any[]) => `
+    <div class="status-card">
+      <div class="flex justify-center items-center gap-2 status-title text-lg">
+        <span class="text-2xl font-black">${count}</span> 案 ${title}
+      </div>
+      <div class="space-y-2 mt-2">
+        ${items.slice(0, 3).map(i => `
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-400">${i["預計租借時間"]?.split(" ")[0].slice(5)}</span>
+            <span class="font-bold">${i["物品名稱"]}</span>
+          </div>
+        `).join("")}
+        ${items.length > 3 ? `<div class="text-center text-[10px] text-gray-400">...以及其他 ${items.length - 3} 案</div>` : ""}
+      </div>
+    </div>
+  `;
+
+  // Update the aside content
+  container.innerHTML = `
+    <div class="flex items-center gap-2 mb-6">
+      <span class="text-brand-red text-xl">🎯</span>
+      <h2 class="text-xl font-bold text-brand-red">狀態列表 Status List</h2>
+    </div>
+    ${renderCard("簽核中", signing.length, signing)}
+    ${renderCard("已簽核", approved.length, approved)}
+    ${renderCard("借用中", borrowing.length, borrowing)}
+    ${renderCard("已逾期", overdue.length, overdue)}
+  `;
 }
 
 (window as any).handleApproveOrder = async (recordId: string) => {
@@ -299,6 +399,7 @@ function renderInventoryItems(
 ): void {
   const container = document.getElementById(containerId);
   if (!container) return;
+  
   container.innerHTML = `
         <div class="flex justify-between text-[10px] font-bold text-brand-red mb-2 px-2 uppercase tracking-tighter">
             <span>名稱</span>
@@ -600,7 +701,7 @@ function handleUpdateProperty(): void {
 
 function handleScrapProperty(): void {
   const options = state.inventory
-    .map((i) => `<option value="${i["物品編號"]}">${i["物品名稱"]}</option>`)
+    .map((i: any) => `<option value="${i["物品編號"]}">${i["物品名稱"]}</option>`)
     .join("");
   const html = `
     <form id="formScrapProperty">
@@ -631,6 +732,133 @@ function handleScrapProperty(): void {
     });
 }
 
+(window as any).handleGlobalRequest = async (itemType: string) => {
+  console.log("handleGlobalRequest triggered for:", itemType);
+  
+  try {
+    if (!state.currentUser) {
+      showToast("請先在側邊欄選擇當前人員");
+      return;
+    }
+
+  let nextId = "...";
+  try {
+    const res = await fetch(`${API_BASE}/records/next-id`);
+    const json = await res.json();
+    nextId = json.next_id;
+  } catch (e) {
+    nextId = "Error";
+  }
+
+  const filteredItems = state.inventory.filter((i: any) => i["物品類型"] === itemType);
+  if (filteredItems.length === 0) {
+    console.warn("No items found for type:", itemType);
+    showToast(`目前無庫存資料，無法進行${itemType === "資產" ? "借用" : "預約"}`);
+    return;
+  }
+  const options = filteredItems.map((i: any) => `<option value="${i["物品編號"]}">${i["物品名稱"]} (庫存: ${i["實際可用"]})</option>`).join("");
+
+  const html = `
+    <form id="formRequestItem">
+      <div class="form-group">
+        <label>訂單編號 (預計)</label>
+        <input type="text" value="${nextId}" readonly class="bg-gray-100 cursor-not-allowed">
+      </div>
+      <div class="form-group">
+        <label>申請人</label>
+        <input type="text" value="${state.currentUser.name} (${state.currentUser.emp_id})" readonly class="bg-gray-100 cursor-not-allowed">
+      </div>
+      <div class="form-group">
+        <label>選擇物品</label>
+        <select name="item_id" required>
+          <option value="">-- 請選擇 --</option>
+          ${options}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>借用數量</label>
+        <input type="number" name="qty" required min="1" value="1">
+      </div>
+      <div class="form-group">
+        <label>預計借用時間</label>
+        <input type="text" name="expected_borrow_time" id="reqBorrowTime" required placeholder="選擇日期時間" class="bg-white cursor-pointer" readonly>
+      </div>
+      ${itemType === "資產" ? `
+        <div class="form-group">
+          <label>預計歸還時間</label>
+          <input type="text" name="expected_return_time" id="reqReturnTime" required placeholder="選擇日期時間" class="bg-white cursor-pointer" readonly>
+        </div>
+      ` : ""}
+      <p class="text-[10px] text-gray-400 mb-4">* 耗材類僅需填寫預定領用時間</p>
+      <button type="submit" class="w-full bg-brand-red text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#600000] transition-all">
+        確認${itemType === "資產" ? "借用" : "預約"}
+      </button>
+    </form>
+  `;
+
+    try {
+      openModal(`${itemType === "資產" ? "資產借用 Asset Borrow" : "耗材預約 Consumable Reservation"}`, html);
+      console.log("Modal opened successfully");
+
+      (window as any).flatpickr("#reqBorrowTime", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        minDate: "today",
+      });
+
+      if (itemType === "資產") {
+        (window as any).flatpickr("#reqReturnTime", {
+          enableTime: true,
+          dateFormat: "Y-m-d H:i",
+          minDate: "today",
+        });
+      }
+    } catch (err) {
+      console.error("Error opening modal or initializing flatpickr:", err);
+      showToast("系統錯誤，無法開啟表單");
+      return;
+    }
+
+  document.getElementById("formRequestItem")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data: any = Object.fromEntries(formData.entries());
+    
+    const payload = {
+      emp_id: state.currentUser.emp_id,
+      item_id: data.item_id,
+      qty: parseInt(data.qty),
+      expected_borrow_time: data.expected_borrow_time,
+      expected_return_time: data.expected_return_time || null,
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}/records/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        showToast("申請成功！");
+        closeModal();
+        fetchInventory();
+        fetchUsageRecords();
+        fetchPersonalRecords(state.currentUser.emp_id);
+      } else {
+        const err = await response.json();
+        showToast(`申請失敗: ${err.detail}`);
+      }
+    } catch (error) {
+      showToast("連線錯誤");
+    }
+  });
+  } catch (error) {
+    console.error("Critical error in handleGlobalRequest:", error);
+    showToast("系統執行出錯");
+  }
+};
+
 // --- Initialization ---
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -654,6 +882,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("btnScrapProperty")
     ?.addEventListener("click", handleScrapProperty);
+  const assetBtn = document.getElementById("btnRequestAsset");
+  if (assetBtn) {
+    console.log("Attaching listener to btnRequestAsset");
+    assetBtn.addEventListener("click", () => (window as any).handleGlobalRequest("資產"));
+  }
+
+  const consumableBtn = document.getElementById("btnRequestConsumable");
+  if (consumableBtn) {
+    console.log("Attaching listener to btnRequestConsumable");
+    consumableBtn.addEventListener("click", () => (window as any).handleGlobalRequest("耗材"));
+  }
   document.getElementById("closeModal")?.addEventListener("click", closeModal);
   document.getElementById("modalOverlay")?.addEventListener("click", (e) => {
     if (e.target === document.getElementById("modalOverlay")) closeModal();
