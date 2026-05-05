@@ -18,13 +18,13 @@ async def check_overdue_records():
         # 每次檢查都需要一個獨立的資料庫連線
         db = SessionLocal()
         try:
-            now = datetime.now()
+            now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
             
             # 撈出所有「借用中」且「有設定預計歸還時間」，且「時間已過期」的訂單
             overdue_records = db.query(models.Record).filter(
                 models.Record.status == '借用中',
                 models.Record.expected_return_time != None,
-                models.Record.expected_return_time < now,
+                models.Record.expected_return_time < now_str,
                 models.Record.overdue_notice_sent == 0
             ).all()
 

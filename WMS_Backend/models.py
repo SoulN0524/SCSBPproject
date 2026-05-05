@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -49,20 +49,14 @@ class Record(Base):
     transaction_type = Column(String)
     status = Column(String)
     
-    # 明確標示哪些欄位在業務邏輯中允許為空 (nullable=True)
-    expected_borrow_time = Column(DateTime)
-    expected_return_time = Column(DateTime, nullable=True)
-    actual_return_time = Column(DateTime, nullable=True)
+    # 時間欄位以 TEXT 儲存 (格式: 'YYYY-MM-DD HH:MM')
+    expected_borrow_time = Column(String)
+    expected_return_time = Column(String, nullable=True)
+    actual_return_time = Column(String, nullable=True)
     manager_id = Column(String, ForeignKey("Users.emp_id"), nullable=True)
     reject_reason = Column(String, nullable=True)
     overdue_notice_sent = Column(Integer, default=0)
     
-    # 歷史快照欄位 (Snapshot)
-    snap_user_name = Column(String)
-    snap_user_dept = Column(String)
-    snap_item_name = Column(String)
-    snap_item_type = Column(String)
-
     # 關聯設定
     user = relationship("User", foreign_keys=[emp_id], back_populates="records")
     manager = relationship("User", foreign_keys=[manager_id])

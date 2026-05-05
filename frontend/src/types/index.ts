@@ -1,14 +1,13 @@
-export interface Asset {
-  name: string;
-  current: number;
-  total: number;
-  alert?: boolean;
-}
-
-export interface Consumable {
-  name: string;
-  current: number;
-  total: number;
+export interface InventoryItem {
+  "物品編號": string;
+  "物品名稱": string;
+  "物品類型": "耗材" | "資產";
+  "物理總數": number;
+  "累積毀損數量": number;
+  "借用中": number;
+  "逾期數量": number;
+  "凍結數量": number;
+  "實際可用": number;
 }
 
 export interface Notice {
@@ -26,8 +25,6 @@ export interface ChartData {
 }
 
 export interface AppState {
-  assets: Asset[];
-  consumables: Consumable[];
+  inventory: InventoryItem[];
   notices: Notice[];
-  chartData: ChartData;
 }

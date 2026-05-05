@@ -1,0 +1,11 @@
+RECORD.status狀態更新邏輯需要變更，請遵循以下規則：
+
+1. 使用者在網頁中進行表單預約後，若Item.type="耗材"或Items.needs_manager_approval為"N"，則RECORD.status為「已預約」。反之，若Items.needs_manager_approval為"Y"，則RECORD.status為「待簽核」，需經由網頁管理者簽核後，RECORD.status為變更為「已簽核」。
+
+2. 當物品為「已簽核」或「已預約」狀態，且Record.expected_borrow_time到達時，RECORD.status為變更為「借用中」。
+
+3. 在「借用中」狀態，若時間超過Record.expected_return_time，則RECORD.status變更為「已逾期」。
+
+4. 在「借用中」或「已逾期」狀態，若操作歸還，RECORD.status為「已結案」。
+
+5. 若為耗材，預約並取用時間到達後，必須扣除total_qty，且total_qty不可小於0。

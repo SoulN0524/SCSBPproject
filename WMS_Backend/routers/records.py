@@ -57,24 +57,21 @@ def create_record(record: schemas.RecordCreate, db: Session = Depends(database.g
 
     
     record_data = record.model_dump()
-    # 判定交易類型與初始狀態
+    # 判定交易類型與初始狀態 (DBRule.txt 規則 1)
     if item.type == '耗材':
-        tx_type, initial_status = '耗材', '已結案'
-        record_data['expected_return_time'] = None  # 耗材不需要預計歸還時間
-        item.total_qty -= record.qty
+        # 耗材：狀態為「已預約」，不需要歸還時間
+        # total_qty 在取用時才扣除 (DBRule.txt 規則 5)
+        tx_type, initial_status = '耗材', '已預約'
+        record_data['expected_return_time'] = None
     elif item.needs_manager_approval == 'Y':
-        tx_type, initial_status = '資產須審核', '待審核'
+        tx_type, initial_status = '資產須審核', '待簽核'
     else:
         tx_type, initial_status = '資產免審核', '已預約'
 
     new_record = models.Record(
         **record_data,
         transaction_type=tx_type,
-        status=initial_status,
-        snap_user_name=user.name,
-        snap_user_dept=user.department,
-        snap_item_name=item.name,
-        snap_item_type=item.type
+        status=initial_status
     )
     
     db.add(new_record)
@@ -148,28 +145,36 @@ def get_record(record_id: int, db: Session = Depends(database.get_db)):
 @router.put(
     "/{record_id}/approve",
     responses={
-        400: {"description": "只有『待審核』的訂單可以核准"},
+        400: {"description": "只有『待簽核』的訂單可以核准"},
         403: {"description": "禁止自我簽核"},
         404: {"description": "找不到該筆訂單"}
     }
 )
 def approve_record(record_id: int, payload: schemas.RecordApprove, db: Session = Depends(database.get_db)):
-    record = db.query(models.Record).filter(models.Record.record_id == record_id).first()
-    if not record: raise HTTPException(status_code=404, detail="找不到該筆訂單")
-    
-    _verify_manager(db, payload.manager_id)
+    import traceback
+    try:
+        record = db.query(models.Record).filter(models.Record.record_id == record_id).first()
+        if not record: raise HTTPException(status_code=404, detail="找不到該筆訂單")
+        
+        _verify_manager(db, payload.manager_id)
 
-    if record.status != '待審核':
-        raise HTTPException(status_code=400, detail=f"目前狀態為『{record.status}』，無法核准")
-    if record.emp_id == payload.manager_id:
-        raise HTTPException(status_code=403, detail="禁止自我簽核")
+        if record.status != '待簽核':
+            raise HTTPException(status_code=400, detail=f"目前狀態為『{record.status}』，無法核准")
+        if record.emp_id == payload.manager_id:
+            raise HTTPException(status_code=403, detail="禁止自我簽核")
 
-    record.status = '已預約'
-    record.manager_id = payload.manager_id
-    db.commit()
+        record.status = '已簽核'
+        record.manager_id = payload.manager_id
+        db.commit()
 
-    send_approval_notice(record.emp_id, record.item_id)
-    return {"message": "訂單已核准"}
+        send_approval_notice(record.emp_id, record.item_id)
+        return {"message": "訂單已簽核"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("!!! APPROVE ERROR !!!")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==========================================
@@ -194,21 +199,31 @@ def pickup_record(
     # 1. 權限檢查（用 helper 一行搞定，跟 approve/reject/return 統一）
     _verify_admin(db, payload.admin_id)
 
-    # 2. 狀態檢查
-    if record.status != '已預約':
+    # 2. 狀態檢查 (已預約 或 已簽核 都可以領取)
+    if record.status not in ['已預約', '已簽核']:
         raise HTTPException(status_code=400, detail=f"目前狀態為『{record.status}』，無法領取")
 
     # 3. 禁止自我發放（管理員不能自己領自己預約的東西，避免繞過控管）
     if record.emp_id == payload.admin_id:
         raise HTTPException(status_code=403, detail="禁止自我發放")
 
-    # 4. 過期失效（對齊 resubmit_record 的邏輯）
-    if datetime.now() > record.expected_borrow_time:
+    # 4. 過期失效（字串比較，格式: 'YYYY-MM-DD HH:MM')
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+    if now_str > record.expected_borrow_time:
         record.status = '已失效'
         db.commit()
         raise HTTPException(status_code=400, detail="已超過預期取用時間，訂單自動失效")
 
-    record.status = '借用中'
+    # 5. 根據物品類型決定後續狀態 (DBRule.txt 規則 2 & 5)
+    item = db.query(models.Item).filter(models.Item.item_id == record.item_id).first()
+    if item and item.type == '耗材':
+        # 耗材：取用後直接「已結案」，同時扣除 total_qty
+        record.status = '已結案'
+        item.total_qty = max(0, item.total_qty - record.qty)
+    else:
+        # 資產：進入「借用中」狀態
+        record.status = '借用中'
+
     db.commit()
     return {"message": "物品已領取", "status": record.status}
 
@@ -238,13 +253,13 @@ def return_record(record_id: int, payload: schemas.RecordReturn, db: Session = D
 
     # 處理毀損與庫存連動
     if payload.damaged_qty > 0:
-        record.status = '已歸還(部分毀損)'
+        record.status = '已結案'
         item = db.query(models.Item).filter(models.Item.item_id == record.item_id).first()
         if item: item.damaged_qty += payload.damaged_qty
     else:
-        record.status = '已歸還'
+        record.status = '已結案'
 
-    record.actual_return_time = datetime.now()
+    record.actual_return_time = datetime.now().strftime('%Y-%m-%d %H:%M')
     db.commit()
     return {"message": "歸還驗收完成", "status": record.status, "reported_damaged": payload.damaged_qty}
 
@@ -270,7 +285,7 @@ def reject_record(
     
     _verify_manager(db, payload.manager_id)
 
-    if record.status != '待審核':
+    if record.status != '待簽核':
         raise HTTPException(status_code=400, detail=f"目前狀態為『{record.status}』，無法退件")
     if record.emp_id == payload.manager_id:
         raise HTTPException(status_code=403, detail="禁止自我簽核")
@@ -306,12 +321,13 @@ def resubmit_record(record_id: int, db: Session = Depends(database.get_db)):
     if record.status != '退回修改':
         raise HTTPException(status_code=400, detail="只有『退回修改』的訂單可重新送審")
 
-    if datetime.now() > record.expected_borrow_time:
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+    if now_str > record.expected_borrow_time:
         record.status = '已失效'
         db.commit()
         raise HTTPException(status_code=400, detail="已超過預期取用時間，訂單自動失效")
 
-    record.status = '待審核'
+    record.status = '待簽核'
     record.reject_reason = None
     db.commit()
     return {"message": "訂單已重新送審", "status": record.status}
@@ -335,7 +351,7 @@ def cancel_record(record_id: int, payload: schemas.RecordCancel, db: Session = D
     if record.emp_id != payload.emp_id:
         raise HTTPException(status_code=403, detail="只能取消自己的申請")
 
-    valid_cancel_status = ['待審核', '已預約', '退回修改']
+    valid_cancel_status = ['待簽核', '已預約', '退回修改', '已簽核']
     if record.status not in valid_cancel_status:
         raise HTTPException(status_code=400, detail=f"目前狀態為『{record.status}』，無法取消")
 

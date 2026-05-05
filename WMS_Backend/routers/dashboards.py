@@ -46,7 +46,8 @@ def get_inventory_status(
     sql = text(base_sql)
     result = db.execute(sql, params).mappings().all()
     
-    return result
+    # 確保回傳的是標準 list[dict]，避免某些環境下 RowMapping 序列化失敗
+    return [dict(row) for row in result]
 # ==========================================
 # API 2: 取得個人借用歷程 (My Records)
 # ==========================================
@@ -108,11 +109,16 @@ def get_all_usage_records(
     limit: int = Query(100, description="設為 0 代表不限制筆數"),
     dept: Optional[str] = Query(None, description="依部門篩選"),
     item_id: Optional[str] = Query(None, description="依物品編號篩選"),
-    performance: Optional[str] = Query(None, description="依歸還表現篩選"),
+    emp_id: Optional[str] = Query(None, description="依員工編號篩選"),
+    emp_name: Optional[str] = Query(None, description="依姓名模糊搜尋"),
+    position: Optional[str] = Query(None, description="依職位篩選"),
+    role: Optional[str] = Query(None, description="依角色篩選"),
+    start_time: Optional[str] = Query(None, description="開始日期 (YYYY-MM-DD)"),
+    end_time: Optional[str] = Query(None, description="結束日期 (YYYY-MM-DD)"),
     db: Session = Depends(database.get_db)
 ):
     """
-    提供給管理員的總表，可從部門、物品或表現等多維度進行交叉分析
+    提供給管理員的總表，支援多條件模糊搜尋與時間區隔過濾
     """
     base_sql = "SELECT * FROM View_Usage_Records WHERE 1=1"
     params = {}
@@ -125,9 +131,29 @@ def get_all_usage_records(
         base_sql += ' AND "物品編號" = :item_id'
         params["item_id"] = item_id
 
-    if performance:
-        base_sql += ' AND "歸還表現評估" = :perf'
-        params["perf"] = performance
+    if emp_id:
+        base_sql += ' AND "借用人編號" LIKE :emp_id'
+        params["emp_id"] = f"%{emp_id}%"
+
+    if emp_name:
+        base_sql += ' AND "借用人姓名" LIKE :emp_name'
+        params["emp_name"] = f"%{emp_name}%"
+
+    if position:
+        base_sql += ' AND "借用人職位" = :pos'
+        params["pos"] = position
+
+    if role:
+        base_sql += ' AND "借用人角色" = :role'
+        params["role"] = role
+
+    if start_time:
+        base_sql += ' AND "預計租借時間" >= :start'
+        params["start"] = f"{start_time} 00:00:00"
+
+    if end_time:
+        base_sql += ' AND "預計租借時間" <= :end'
+        params["end"] = f"{end_time} 23:59:59"
 
     base_sql += ' ORDER BY "預計租借時間" DESC'
 
@@ -137,4 +163,4 @@ def get_all_usage_records(
         params["skip"] = skip
 
     result = db.execute(text(base_sql), params).mappings().all()
-    return result
+    return [dict(row) for row in result]

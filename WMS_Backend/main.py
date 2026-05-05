@@ -1,6 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routers import users, items, records, dashboards
 from scheduler import check_overdue_records
 
@@ -19,6 +20,15 @@ app = FastAPI(
     description="提供人員、物品、借用紀錄與庫存報表的後端服務",
     version="1.0.0",
     lifespan=lifespan  # <--- 關鍵：將排程器掛載進來
+)
+
+# 2.5 設定 CORS (允許跨來源資源共用)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # 在正式環境建議限制為前端的網址
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 3. 註冊所有的 API 路由分機

@@ -8,6 +8,59 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Flatpickr for Date Range -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+      /* Flatpickr Custom Theme */
+      .flatpickr-calendar {
+        border-radius: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #f3f4f6;
+      }
+      .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange,
+      .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange,
+      .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus,
+      .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover,
+      .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay,
+      .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay {
+        background: #800000 !important;
+        border-color: #800000 !important;
+      }
+      .flatpickr-day.inRange {
+        background: #fff5f5 !important;
+        box-shadow: -5px 0 0 #fff5f5, 5px 0 0 #fff5f5 !important;
+      }
+      .flatpickr-months .flatpickr-month {
+        background: #800000 !important;
+        color: white !important;
+        border-radius: 12px 12px 0 0;
+      }
+      .flatpickr-current-month .flatpickr-monthDropdown-months {
+        font-weight: 700 !important;
+      }
+      .flatpickr-weekdays {
+        background: #800000 !important;
+      }
+      span.flatpickr-weekday {
+        color: rgba(255, 255, 255, 0.9) !important;
+        font-weight: 600 !important;
+      }
+      .flatpickr-current-month .flatpickr-monthDropdown-months,
+      .flatpickr-current-month input.cur-year {
+        color: white !important;
+        font-weight: 700 !important;
+      }
+      .flatpickr-monthDropdown-months option {
+        color: #333 !important;
+        background: white !important;
+      }
+      #currentUserSelect option {
+        color: #333;
+        background: white;
+      }
+    </style>
   </head>
   <body class="bg-[#F8F9FA] text-gray-800 h-screen flex overflow-hidden">
     <aside
@@ -56,12 +109,16 @@
           class="w-20 h-20 rounded-full bg-[#FCA5A5] flex items-center justify-center text-brand-red text-2xl font-bold border-4 border-white/20 mb-3 shadow-lg overflow-hidden"
         >
           <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Patrick"
-            alt="Dr. Patrick"
+            id="currentUserAvatar"
+            src="https://api.dicebear.com/7.x/avataaars/svg?seed=Default"
+            alt="User Avatar"
           />
         </div>
-        <div class="text-center">
-          <p class="font-bold text-lg">Dr. Patrick</p>
+        <div class="text-center w-full">
+          <select id="currentUserSelect" class="w-full bg-white/10 text-white border border-white/20 rounded-lg px-2 py-1.5 text-sm font-bold text-center appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/50 mb-1" style="color-scheme: dark;">
+            <option value="" style="color: #333; background: white;">載入中...</option>
+          </select>
+          <p id="currentUserRole" class="text-xs text-white/70 mt-1"></p>
         </div>
       </div>
     </aside>
@@ -79,16 +136,19 @@
       >
         <header class="p-6 flex justify-end items-center gap-4 shrink-0">
           <button
+            id="btnUpdateProperty"
             class="flex items-center gap-2 px-5 py-2.5 bg-brand-red text-white rounded-lg hover:bg-[#600000] transition-colors shadow-md text-sm font-medium"
           >
             <span>🔄</span> 財產更新
           </button>
           <button
+            id="btnScrapProperty"
             class="flex items-center gap-2 px-5 py-2.5 bg-brand-red text-white rounded-lg hover:bg-[#600000] transition-colors shadow-md text-sm font-medium"
           >
             <span>➖</span> 財產報廢
           </button>
           <button
+            id="btnAddProperty"
             class="flex items-center gap-2 px-5 py-2.5 bg-brand-red text-white rounded-lg hover:bg-[#600000] transition-colors shadow-md text-sm font-medium"
           >
             <span>➕</span> 新增財產
@@ -153,23 +213,57 @@
 
           <div class="xl:col-span-3 grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div
-              class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 lg:col-span-3"
+              class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 lg:col-span-2"
             >
-              <h2 class="text-lg font-bold text-brand-red text-center mb-1">
+              <h2 class="text-lg font-bold text-brand-red text-center mb-4">
                 資產項目狀態長條圖
               </h2>
-              <div class="chart-container">
+              <div class="chart-container h-[400px]">
                 <canvas id="stackedBarChart"></canvas>
               </div>
             </div>
+            
             <div
-              class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 lg:col-span-1"
+              class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 lg:col-span-2 flex flex-col"
             >
-              <h2 class="text-lg font-bold text-brand-red text-center mb-1">
-                警告水位統計
+              <h2 class="text-lg font-bold text-brand-red text-center mb-4">
+                員工訂單查詢介面系統
               </h2>
-              <div class="chart-container">
-                <canvas id="donutChart"></canvas>
+              
+              <!-- Search Filters -->
+              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-4">
+                <input type="text" id="queryEmpId" placeholder="員編" class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-red">
+                <input type="text" id="queryEmpName" placeholder="姓名" class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-red">
+                <select id="queryPosition" class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-red">
+                  <option value="">職位</option>
+                  <option value="員工">員工</option>
+                  <option value="主管">主管</option>
+                </select>
+                <select id="queryRole" class="px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-red">
+                  <option value="">角色</option>
+                  <option value="使用者">使用者</option>
+                  <option value="管理員">管理員</option>
+                </select>
+                <input type="text" id="queryDateRange" placeholder="預約時間區間 (開始 to 結束)" class="px-3 py-1.5 text-[10px] border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-red col-span-2 cursor-pointer bg-white" readonly>
+              </div>
+
+              <!-- Records Table -->
+              <div class="flex-1 overflow-y-auto scrollbar-hide min-h-[300px]">
+                <table class="w-full text-xs text-center border-collapse table-fixed">
+                  <thead class="sticky top-0 bg-white z-10">
+                    <tr class="text-brand-red font-bold border-b-2 border-gray-100">
+                      <th class="py-2 px-1 w-[15%]">員編</th>
+                      <th class="py-2 px-1 w-[15%]">姓名</th>
+                      <th class="py-2 px-1 w-[25%]">物品</th>
+                      <th class="py-2 px-1 w-[10%]">數量</th>
+                      <th class="py-2 px-1 w-[20%]">狀態</th>
+                      <th class="py-2 px-1 w-[15%]">動作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orderQueryTableBody" class="text-gray-700">
+                    <!-- Data via JS -->
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -369,6 +463,19 @@
         </aside>
       </section>
     </main>
+    <!-- Modal for Forms -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] backdrop-blur-sm">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h3 id="modalTitle" class="text-xl font-bold text-brand-red">標題</h3>
+          <button id="closeModal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        <div id="modalBody" class="p-6">
+          <!-- Form content will be injected here -->
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

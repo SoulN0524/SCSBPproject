@@ -62,8 +62,8 @@ class RecordCreate(BaseModel):
     emp_id: str
     item_id: str
     qty: int = Field(..., gt=0, description="借用數量必須大於 0")
-    expected_borrow_time: datetime
-    expected_return_time: Optional[datetime] = None  # 耗材可能沒有預計歸還時間
+    expected_borrow_time: str
+    expected_return_time: Optional[str] = None  # 耗材可能沒有預計歸還時間
 
 # 主管點擊「退回修改」或「已駁回」時，前端傳來的格式
 class RecordReject(BaseModel):
@@ -83,12 +83,9 @@ class RecordResponse(BaseModel):
     transaction_type: str
     status: str
 
-    snap_user_dept: str
-    snap_item_name: str
-
-    expected_borrow_time: datetime
-    expected_return_time: Optional[datetime]
-    actual_return_time: Optional[datetime]
+    expected_borrow_time: Optional[str] = None
+    expected_return_time: Optional[str] = None
+    actual_return_time: Optional[str] = None
     manager_id: Optional[str]
     reject_reason: Optional[str]
 
